@@ -2,7 +2,8 @@ node_modules/
 .next/
 out/
 .vercel/
-.data/
+.data/*
+!.data/storage/
 .env*.local
 next-env.d.ts
 *.tsbuildinfo
