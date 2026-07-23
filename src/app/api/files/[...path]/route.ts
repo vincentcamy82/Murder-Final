@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { decodeToken } from "@/lib/server/auth";
 import { findCharacterByStoragePath } from "@/lib/server/data";
 import { ApiError, handler } from "@/lib/server/http";
+import { pickPortrait } from "@/lib/server/portrait";
 import { readLocalObject } from "@/lib/server/storage";
 
 export const GET = handler(
@@ -12,8 +13,10 @@ export const GET = handler(
     const owner = await findCharacterByStoragePath(storagePath);
     if (!owner) throw new ApiError(404, "Fichier introuvable");
 
-    const token = request.nextUrl.searchParams.get("token");
-    if (token) {
+    const portrait = await pickPortrait(owner.media);
+    if (portrait?.storage_path !== storagePath) {
+      const token = request.nextUrl.searchParams.get("token");
+      if (!token) throw new ApiError(401, "Non authentifié");
       const identity = await decodeToken(token);
       if (identity.role === "player" && identity.character_id !== owner.id) {
         throw new ApiError(403, "Accès refusé");
