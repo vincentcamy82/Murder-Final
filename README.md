@@ -19,7 +19,13 @@ yarn build
 2. Variables d'environnement : `MONGO_URL`, `DB_NAME`, `ADMIN_PASSWORD`, `JWT_SECRET` — guide détaillé dans [SETUP-MONGODB.md](./SETUP-MONGODB.md).
 3. Onglet Storage : créer un store **Blob** pour les médias (`BLOB_READ_WRITE_TOKEN` injecté automatiquement).
 
+## Musique d’accueil
+
+La musique est extraite du fichier « Musique accueil_ » fourni pour le site. Le bouton « Écouter l’ambiance » lance la lecture en boucle ; un second clic la met en pause. Pour la remplacer, remplacer `public/audio/ambiance.mp3` par le fichier MP3 souhaité.
+
 ## Limites connues
 
-- Corps de requête limité à ~4,5 Mo sur Vercel : les photos passent, pas les uploads de vidéos — utiliser les liens YouTube/Vimeo (déjà supportés).
+- Les photos volumineuses sont réduites dans le navigateur avant l’envoi (JPEG de 4 Mo maximum). Formats acceptés : JPEG, PNG, WebP et GIF ; exporter les fichiers HEIC en JPEG.
+- Vercel Blob doit être connecté en production : sans `BLOB_READ_WRITE_TOKEN`, l’envoi affiche une erreur de configuration. Le stockage local reste réservé au développement.
+- Corps de requête limité à ~4,5 Mo sur Vercel : pour les vidéos, utiliser les liens YouTube/Vimeo (déjà supportés).
 - Le mot de passe admin est comparé directement à `ADMIN_PASSWORD` (pas de hash stocké en base, inutile puisque la valeur vit déjà dans l'env).

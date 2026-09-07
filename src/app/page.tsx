@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, API, setToken, formatError, errorDetail, fileUrl } from "@/lib/api";
 import { DEFAULT_SITE, backgroundUrl } from "@/lib/site";
 import type { PublicCharacter, SiteContent } from "@/types";
 import { MapPin, Hourglass, KeyRound, Lock } from "lucide-react";
-
-const AMBIENT_AUDIO = "";
+import AmbientMusic from "@/components/AmbientMusic";
 
 const makePortrait = (label: string, background: string, accent: string) => {
   const svg = `
@@ -108,30 +107,10 @@ export default function Landing() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const audioRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     api.get<PublicCharacter[]>("/characters/public").then((r) => setGuests(r.data)).catch(() => {});
     api.get<SiteContent>("/site").then((r) => setSite({ ...DEFAULT_SITE, ...r.data })).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const el = audioRef.current;
-    if (!el) return;
-    el.volume = 0.5;
-    const tryPlay = () => el.play().catch(() => {});
-    tryPlay();
-    const onInteract = () => {
-      tryPlay();
-      window.removeEventListener("pointerdown", onInteract);
-      window.removeEventListener("keydown", onInteract);
-    };
-    window.addEventListener("pointerdown", onInteract);
-    window.addEventListener("keydown", onInteract);
-    return () => {
-      window.removeEventListener("pointerdown", onInteract);
-      window.removeEventListener("keydown", onInteract);
-    };
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -164,19 +143,7 @@ export default function Landing() {
 
   return (
     <div className="aged-bg min-h-screen text-[#e8dcc2]" style={{ fontFamily: bodyFont }}>
-      {AMBIENT_AUDIO ? (
-        <video
-          ref={audioRef}
-          src={AMBIENT_AUDIO}
-          loop
-          playsInline
-          aria-hidden="true"
-          tabIndex={-1}
-          data-testid="ambient-audio"
-          className="pointer-events-none absolute h-px w-px opacity-0"
-          style={{ left: "-9999px" }}
-        />
-      ) : null}
+      <AmbientMusic />
 
       <header className="sticky top-0 z-50 flex items-center justify-between border-b-2 border-[#4a3418] bg-[#160f08]/95 px-6 py-4 backdrop-blur-md">
         <div className="flex items-center gap-3 text-lg tracking-[0.2em] text-[#c8a24e]" style={{ fontFamily: CAPS }}>

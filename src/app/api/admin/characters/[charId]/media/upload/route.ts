@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/server/auth";
 import { APP_NAME, addMedia, findCharacterById, serializeCharacter } from "@/lib/server/data";
 import { ApiError, handler } from "@/lib/server/http";
 import { MIME_TYPES, fileExtension, saveObject } from "@/lib/server/storage";
+import { MAX_PHOTO_BYTES, PHOTO_TYPES } from "@/lib/photo";
 
 export const POST = handler(
   async (request, { params }: { params: Promise<{ charId: string }> }) => {
@@ -22,6 +23,11 @@ export const POST = handler(
     const ext = fileExtension(file.name, "bin");
     const pathname = `${APP_NAME}/${charId}/${randomUUID()}.${ext}`;
     const contentType = file.type || MIME_TYPES[ext] || "application/octet-stream";
+    if (kind === "photo") {
+      if (!PHOTO_TYPES.includes(contentType)) throw new ApiError(400, "Choisissez une photo JPEG, PNG, WebP ou GIF");
+      if (!file.size) throw new ApiError(400, "Le fichier est vide");
+      if (file.size > MAX_PHOTO_BYTES) throw new ApiError(413, "La photo dépasse 4 Mo. Réduisez sa taille avant de réessayer.");
+    }
     const stored = await saveObject(pathname, await file.arrayBuffer(), contentType);
 
     const item: MediaItem = {

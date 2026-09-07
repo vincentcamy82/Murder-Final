@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { put } from "@vercel/blob";
+import { ApiError } from "./http";
 
 const LOCAL_ROOT = path.join(process.cwd(), ".data", "storage");
 
@@ -38,6 +39,9 @@ export async function saveObject(
       addRandomSuffix: false,
     });
     return { path: pathname, blobUrl: blob.url };
+  }
+  if (process.env.VERCEL) {
+    throw new ApiError(503, "Le stockage des médias n’est pas configuré. Connectez Vercel Blob et configurez BLOB_READ_WRITE_TOKEN, puis redéployez le site.");
   }
   const target = path.join(LOCAL_ROOT, pathname);
   await fs.mkdir(path.dirname(target), { recursive: true });

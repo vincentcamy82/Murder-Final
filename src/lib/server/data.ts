@@ -1,4 +1,5 @@
 import { randomInt, randomUUID } from "crypto";
+import { Temporal } from "temporal-polyfill";
 import type { Collection } from "mongodb";
 import type { Character, MediaItem, SiteContent } from "@/types";
 import { getDb } from "./db";
@@ -100,6 +101,24 @@ async function ensureSeed(): Promise<void> {
 export async function listCharacters(): Promise<CharacterRecord[]> {
   await ensureSeed();
   return (await charactersCollection()).find().sort({ order: 1 }).toArray();
+}
+
+export async function createGuest(name: string): Promise<CharacterRecord> {
+  await ensureSeed();
+  const characters = await charactersCollection();
+  const last = await characters.findOne({}, { sort: { order: -1 } });
+  const guest: CharacterRecord = {
+    id: randomUUID(),
+    name,
+    title: "Invité",
+    access_code: await uniqueCodeInDb(),
+    story: "",
+    media: [],
+    order: (last?.order ?? -1) + 1,
+    created_at: Temporal.Now.instant().toString(),
+  };
+  await characters.insertOne(guest);
+  return guest;
 }
 
 export async function findCharacterById(id: string): Promise<CharacterRecord | null> {

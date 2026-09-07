@@ -10,9 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LogOut, Pencil, RefreshCw, Trash2, Upload, LinkIcon, Copy, Image as ImageIcon, Film, type LucideProps } from "lucide-react";
+import { LogOut, Pencil, Plus, RefreshCw, Trash2, Upload, LinkIcon, Copy, Image as ImageIcon, Film, type LucideProps } from "lucide-react";
+import AddGuestDialog from "@/components/AddGuestDialog";
 import SiteSettings from "@/components/SiteSettings";
 import { DEFAULT_SITE } from "@/lib/site";
+import { preparePhoto } from "@/lib/photo";
 import type { Character, MediaItem, MediaKind, SiteContent } from "@/types";
 
 export default function AdminDashboard() {
@@ -20,6 +22,7 @@ export default function AdminDashboard() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Character | null>(null);
+  const [addingGuest, setAddingGuest] = useState(false);
   const [site, setSite] = useState<SiteContent>(DEFAULT_SITE);
 
   const load = useCallback(async () => {
@@ -91,6 +94,11 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="characters">
+            <div className="mb-5 flex justify-end">
+              <Button onClick={() => setAddingGuest(true)} className="gap-2 rounded-none bg-brass text-black hover:bg-brass/90">
+                <Plus className="h-4 w-4" /> Ajouter un invité
+              </Button>
+            </div>
             <div className="rounded-md border border-white/10 bg-noir-paper shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
               <Table>
                 <TableHeader>
@@ -149,6 +157,16 @@ export default function AdminDashboard() {
         </Tabs>
       </main>
 
+      {addingGuest && (
+        <AddGuestDialog
+          onClose={() => setAddingGuest(false)}
+          onCreated={(guest) => {
+            setCharacters((current) => [...current, guest]);
+            setAddingGuest(false);
+            setEditing(guest);
+          }}
+        />
+      )}
       {editing && <EditDialog character={editing} onClose={() => setEditing(null)} onSaved={onSaved} />}
     </div>
   );
@@ -168,6 +186,7 @@ function EditDialog({
   const [accessCode, setAccessCode] = useState(character.access_code ?? "");
   const [story, setStory] = useState(character.story || "");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [linkKind, setLinkKind] = useState<MediaKind>("photo");
   const [linkUrl, setLinkUrl] = useState("");
   const photoInput = useRef<HTMLInputElement | null>(null);
@@ -220,19 +239,22 @@ function EditDialog({
   };
 
   const uploadFile = async (kind: MediaKind, file: File | undefined) => {
-    if (!file) return;
-    const form = new FormData();
-    form.append("kind", kind);
-    form.append("file", file);
-    const t = toast.loading("Téléversement…");
+    if (!file || uploading) return;
+    setUploading(true);
+    const t = toast.loading("Préparation du fichier…");
     try {
-      const { data } = await api.post<Character>(`/admin/characters/${character.id}/media/upload`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const prepared = kind === "photo" ? await preparePhoto(file) : file;
+      const form = new FormData();
+      form.append("kind", kind);
+      form.append("file", prepared);
+      toast.loading("Téléversement…", { id: t });
+      const { data } = await api.post<Character>(`/admin/characters/${character.id}/media/upload`, form);
       onSaved(data);
       toast.success("Fichier ajouté", { id: t });
     } catch (err) {
-      toast.error(formatError(errorDetail(err)), { id: t });
+      toast.error(formatError(errorDetail(err) ?? (err instanceof Error ? err.message : undefined)), { id: t });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -290,6 +312,7 @@ function EditDialog({
           <TabsContent value="photos" className="mt-6 space-y-6">
             <MediaAdder
               kind="photo"
+              uploading={uploading}
               accept="image/*"
               inputRef={photoInput}
               onUpload={(f) => uploadFile("photo", f)}
@@ -322,6 +345,7 @@ function EditDialog({
           <TabsContent value="videos" className="mt-6 space-y-6">
             <MediaAdder
               kind="video"
+              uploading={uploading}
               accept="video/*"
               inputRef={videoInput}
               onUpload={(f) => uploadFile("video", f)}
@@ -370,6 +394,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function MediaAdder({
   kind,
+  uploading,
   accept,
   inputRef,
   onUpload,
@@ -379,6 +404,7 @@ function MediaAdder({
   linkPlaceholder = "Coller une URL d'image",
 }: {
   kind: MediaKind;
+  uploading: boolean;
   accept: string;
   inputRef: RefObject<HTMLInputElement | null>;
   onUpload: (file: File | undefined) => void;
@@ -397,6 +423,7 @@ function MediaAdder({
         <input
           ref={inputRef}
           type="file"
+          disabled={uploading}
           accept={accept}
           className="hidden"
           data-testid={`upload-input-${kind}`}
@@ -405,9 +432,10 @@ function MediaAdder({
             e.target.value = "";
           }}
         />
-        <Button data-testid={`upload-btn-${kind}`} variant="outline" onClick={() => inputRef.current?.click()} className="w-full gap-2 rounded-none border-white/20 font-mono text-xs uppercase tracking-widest">
-          <Upload className="h-4 w-4" /> Téléverser un fichier
+        <Button data-testid={`upload-btn-${kind}`} disabled={uploading} variant="outline" onClick={() => inputRef.current?.click()} className="w-full gap-2 rounded-none border-white/20 font-mono text-xs uppercase tracking-widest">
+          <Upload className="h-4 w-4" /> {uploading ? "Téléversement…" : "Téléverser un fichier"}
         </Button>
+        {kind === "photo" && <p className="mt-2 text-xs text-parch/50">JPEG, PNG, WebP ou GIF. Les grandes photos sont automatiquement allégées. Pour le format HEIC, exportez d’abord en JPEG.</p>}
       </div>
       <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-parch/30">
         <div className="h-px flex-1 bg-white/10" /> ou <div className="h-px flex-1 bg-white/10" />
