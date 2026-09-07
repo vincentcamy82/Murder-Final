@@ -26,7 +26,7 @@ export const POST = handler(
     if (kind === "photo") {
       if (!PHOTO_TYPES.includes(contentType)) throw new ApiError(400, "Choisissez une photo JPEG, PNG, WebP ou GIF");
       if (!file.size) throw new ApiError(400, "Le fichier est vide");
-      if (file.size > MAX_PHOTO_BYTES) throw new ApiError(413, "La photo dépasse 4 Mo. Réduisez sa taille avant de réessayer.");
+      if (file.size > MAX_PHOTO_BYTES) throw new ApiError(413, "La photo dépasse 1 Mo. Réduisez sa taille avant de réessayer.");
     }
     const stored = await saveObject(pathname, await file.arrayBuffer(), contentType);
 

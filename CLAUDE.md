@@ -54,11 +54,9 @@ Auto-seed : au premier appel API, si `characters` est vide, création de 15 pers
 
 ### Stockage des médias (`src/lib/server/storage.ts`)
 
-Double mode selon la présence de `BLOB_READ_WRITE_TOKEN` :
-- production : Vercel Blob (URL publique `blob_url`) ;
-- local : fichiers dans `.data/storage/` (gitignoré).
+Les nouveaux fichiers vont dans la collection MongoDB `media_files`, en binaire, en local comme en production. Réutiliser le plan Atlas Free / M0 prévu pour ce site : les 512 Mo sont partagés avec les données et les index. Aucun service Blob n’est nécessaire. Voir [SETUP-MONGODB.md](./SETUP-MONGODB.md) pour les limites et la compatibilité avec les anciens fichiers.
 
-Mongo ne stocke que les références (`storage_path`, `blob_url`, `url`). `/api/files/[...path]` sert les fichiers : redirection vers `blob_url` s'il existe, sinon lecture locale ; un joueur ne peut accéder qu'aux médias de son propre personnage. Vidéos : uploads impossibles sur Vercel (corps limité à ~4,5 Mo) → liens YouTube/Vimeo (embeds gérés par `src/lib/media.ts`).
+Les références restent dans `characters.media` et `settings`. `/api/files/[...path]` sert les fichiers MongoDB, avec repli sur les anciens fichiers locaux et redirection pour les anciennes `blob_url`. Le premier portrait disponible est public ; les autres médias nécessitent une session admin ou celle du personnage concerné. La suppression d’un média et le remplacement du fond libèrent le fichier MongoDB précédent. Les photos et fonds sont compressés avant l’envoi par `preparePhoto()` ; privilégier les liens YouTube/Vimeo pour les vidéos.
 
 ### UI
 

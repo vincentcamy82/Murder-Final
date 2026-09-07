@@ -36,12 +36,11 @@ Au premier appel API, si la collection `characters` est **vide**, l'app crée 15
 
 ## Médias
 
-MongoDB ne stocke que les **références** des médias (`storage_path`, URLs). Les fichiers eux-mêmes vont :
+Les nouveaux fichiers sont stockés en binaire dans la collection **`media_files`** de la même base MongoDB, en local comme en production. Chaque fichier possède son propre document ; les schémas de `characters` et `settings` restent inchangés. Aucun compte de stockage supplémentaire ni `BLOB_READ_WRITE_TOKEN` n’est nécessaire.
 
-- en production : dans **Vercel Blob** (`BLOB_READ_WRITE_TOKEN` requis — store à créer dans l'onglet Storage du dashboard) ;
-- en local : dans `.data/storage/`.
+Le plan **Free / M0** fournit [512 Mo de stockage](https://www.mongodb.com/pricing), partagés entre les fichiers, les données et les index. Les photos et images de fond sont réduites à 1 Mo maximum dans le navigateur. Les fichiers de plus de 4 Mo sont refusés ; utiliser des liens YouTube/Vimeo pour les vidéos. Supprimer un média ou remplacer le fond supprime également l’ancien fichier de MongoDB.
 
-Les fichiers uploadés du temps de l'ancien backend vivaient sur son disque (`backend/storage/`). Pour qu'ils s'affichent en local, copier ce dossier dans `.data/storage/`. En production, les re-uploader via l'admin (ils partiront dans Blob).
+Les fichiers uploadés du temps de l'ancien backend vivaient sur son disque (`backend/storage/`). Pour qu'ils s'affichent en local, copier ce dossier dans `.data/storage/`. En production, les re-uploader via l'admin pour les enregistrer dans MongoDB. Les anciennes URL Blob restent prises en charge en lecture.
 
 ## Dépannage
 

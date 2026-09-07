@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api, API, formatError, errorDetail } from "@/lib/api";
 import { HEADING_FONTS, BODY_FONTS, backgroundUrl } from "@/lib/site";
+import { preparePhoto } from "@/lib/photo";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,18 +66,16 @@ export default function SiteSettings({
 
   const uploadBg = async (file: File | undefined) => {
     if (!file) return;
-    const fd = new FormData();
-    fd.append("file", file);
     const t = toast.loading("Téléversement…");
     try {
-      const { data } = await api.post<SiteContent>("/admin/site/background/upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const fd = new FormData();
+      fd.append("file", await preparePhoto(file));
+      const { data } = await api.post<SiteContent>("/admin/site/background/upload", fd);
       setSite(data);
       setForm(data);
       toast.success("Image de fond téléversée", { id: t });
     } catch (err) {
-      toast.error(formatError(errorDetail(err)), { id: t });
+      toast.error(formatError(errorDetail(err) ?? (err instanceof Error ? err.message : undefined)), { id: t });
     }
   };
 

@@ -1,4 +1,4 @@
-export const MAX_PHOTO_BYTES = 4_000_000;
+export const MAX_PHOTO_BYTES = 1_000_000;
 export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 export async function preparePhoto(file: File): Promise<File> {
@@ -12,7 +12,7 @@ export async function preparePhoto(file: File): Promise<File> {
   try {
     if (file.size <= MAX_PHOTO_BYTES && PHOTO_TYPES.includes(file.type)) return file;
     const canvas = document.createElement("canvas");
-    const scale = Math.min(1, 2400 / Math.max(image.width, image.height));
+    const scale = Math.min(1, 1920 / Math.max(image.width, image.height));
     canvas.width = Math.max(1, Math.round(image.width * scale));
     canvas.height = Math.max(1, Math.round(image.height * scale));
     const context = canvas.getContext("2d");
