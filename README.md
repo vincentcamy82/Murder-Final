@@ -21,7 +21,7 @@ yarn build
 
 ## Musique d’accueil
 
-La musique est extraite du fichier « Musique accueil_ » fourni pour le site. Le bouton « Écouter l’ambiance » lance la lecture en boucle ; un second clic la met en pause. Pour la remplacer, remplacer `public/audio/ambiance.mp3` par le fichier MP3 souhaité.
+La musique est extraite du fichier « Musique accueil_ » fourni pour le site. Elle démarre automatiquement en boucle à l’ouverture de l’accueil. Si le navigateur bloque la lecture automatique, elle démarre au premier clic ou à la première touche. Le bouton « Couper la musique » la met en pause et « Écouter l’ambiance » la relance. Pour la remplacer, remplacer `public/audio/ambiance.mp3` par le fichier MP3 souhaité.
 
 ## Limites connues
 
