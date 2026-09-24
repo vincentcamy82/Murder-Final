@@ -152,7 +152,7 @@ export default function Landing() {
         </div>
         <nav className="hidden gap-8 text-xs uppercase tracking-[0.25em] text-[#b09a72] md:flex" style={{ fontFamily: SC }}>
           <a href="#recit" className="transition hover:text-[#c8a24e]">Le Récit</a>
-          <a href="#suspects" className="transition hover:text-[#c8a24e]">Les Suspects</a>
+          <a href="#suspects" className="transition hover:text-[#c8a24e]">Les Convives</a>
           <a href="#infos" className="transition hover:text-[#c8a24e]">Infos Pratiques</a>
         </nav>
       </header>
