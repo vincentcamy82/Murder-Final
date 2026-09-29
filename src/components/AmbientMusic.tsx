@@ -3,6 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Music2, Pause } from "lucide-react";
 
+const MUTED_KEY = "mp_music_muted";
+
+function hasMutedMusic(): boolean {
+  try {
+    return localStorage.getItem(MUTED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberMuted(muted: boolean) {
+  try {
+    if (muted) localStorage.setItem(MUTED_KEY, "1");
+    else localStorage.removeItem(MUTED_KEY);
+  } catch {}
+}
+
 export default function AmbientMusic({ track }: { track: string }) {
   const audio = useRef<HTMLAudioElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -13,6 +30,7 @@ export default function AmbientMusic({ track }: { track: string }) {
   useEffect(() => {
     const player = audio.current;
     if (!player) return;
+    if (hasMutedMusic()) return () => player.pause();
     const controller = new AbortController();
     autoplay.current = controller;
 
@@ -49,9 +67,11 @@ export default function AmbientMusic({ track }: { track: string }) {
     if (!player) return;
     autoplay.current?.abort();
     if (!player.paused) {
+      rememberMuted(true);
       player.pause();
       return;
     }
+    rememberMuted(false);
     setError(false);
     try {
       await player.play();
@@ -62,7 +82,7 @@ export default function AmbientMusic({ track }: { track: string }) {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-[calc(100vw-2rem)]">
-      <audio ref={audio} src={track} autoPlay loop preload="auto" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => { setPlaying(false); setError(true); }} data-testid="ambient-audio" />
+      <audio ref={audio} src={track} loop preload="auto" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => { setPlaying(false); setError(true); }} data-testid="ambient-audio" />
       {error && <p role="alert" className="mb-2 bg-[#160f08] p-2 text-sm text-parch">La musique est indisponible. Réessayez.</p>}
       <button ref={button} type="button" onClick={toggle} aria-pressed={playing} className="flex items-center gap-2 rounded-sm border border-[#a8863f] bg-[#160f08]/95 px-4 py-3 text-xs text-[#c8a24e] shadow-lg">
         {playing ? <Pause className="h-4 w-4" /> : <Music2 className="h-4 w-4" />}
