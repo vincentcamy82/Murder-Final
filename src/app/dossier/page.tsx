@@ -7,6 +7,7 @@ import VideoGallery, { VideoPlayer } from "@/components/VideoGallery";
 import BiographyBackground from "@/components/BiographyBackground";
 import { DEFAULT_SITE } from "@/lib/site";
 import { privatePhotos } from "@/lib/media";
+import { CHARACTER_ROLE_LABELS } from "@/lib/roles";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import type { Character, MediaItem, SiteContent } from "@/types";
@@ -104,9 +105,15 @@ export default function Dossier() {
               <p className="font-mono text-xs uppercase tracking-[0.3em] text-parch/40">
                 {character.title || "Convive"}
               </p>
-              <h1 data-testid="character-name" className="mt-3 font-serif text-4xl font-light leading-tight text-parch">
-                {character.name}
-              </h1>
+              <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                <h1 data-testid="character-name" className="font-serif text-4xl font-light leading-tight text-parch">
+                  {character.name}
+                </h1>
+                <p data-testid="character-role" className="text-right">
+                  <span className="block font-mono text-xs uppercase tracking-[0.3em] text-parch/40">Rôle</span>
+                  <span className="font-serif text-lg italic text-brass">{character.role ? CHARACTER_ROLE_LABELS[character.role] : "À venir"}</span>
+                </p>
+              </div>
               <div className="my-6 h-px w-full bg-gradient-to-r from-brass/60 to-transparent" />
               <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-parch/50">
                 <ScrollText className="h-4 w-4 text-brass" />

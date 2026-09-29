@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -17,7 +18,8 @@ import SiteSettings from "@/components/SiteSettings";
 import { DEFAULT_SITE } from "@/lib/site";
 import { preparePhoto } from "@/lib/photo";
 import { photoVisibility, publicPhotos } from "@/lib/media";
-import type { Character, MediaItem, MediaKind, MediaVisibility, SiteContent } from "@/types";
+import { CHARACTER_ROLES, CHARACTER_ROLE_LABELS } from "@/lib/roles";
+import type { Character, CharacterRole, MediaItem, MediaKind, MediaVisibility, SiteContent } from "@/types";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -192,6 +194,7 @@ function EditDialog({
   const [accessCode, setAccessCode] = useState(character.access_code ?? "");
   const [publicStory, setPublicStory] = useState(character.public_story || "");
   const [story, setStory] = useState(character.story || "");
+  const [role, setRole] = useState<CharacterRole | null>(character.role);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [linkKind, setLinkKind] = useState<MediaKind>("photo");
@@ -211,6 +214,7 @@ function EditDialog({
         access_code: accessCode,
         story,
         public_story: publicStory,
+        role,
       });
       onSaved(data);
       toast.success("Fiche enregistrée");
@@ -314,6 +318,18 @@ function EditDialog({
             </Field>
             <Field label="Titre / Rôle">
               <Input data-testid="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-none border-white/20 bg-transparent" />
+            </Field>
+            <Field label="Rôle dans l'intrigue">
+              <Select value={role ?? undefined} onValueChange={(v) => setRole(v as CharacterRole)}>
+                <SelectTrigger data-testid="edit-role" className="rounded-none border-white/20 bg-transparent">
+                  <SelectValue placeholder="Non défini" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHARACTER_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>{CHARACTER_ROLE_LABELS[r]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Code d'accès">
               <div className="flex gap-2">

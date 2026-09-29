@@ -14,12 +14,15 @@ export interface MediaItem {
   visibility?: MediaVisibility | null;
 }
 
+export type CharacterRole = "coupable" | "innocent" | "complice";
+
 export interface Character {
   id: string;
   name: string;
   title: string;
   story: string;
   public_story: string;
+  role: CharacterRole | null;
   order: number;
   media: MediaItem[];
   access_code?: string;

@@ -1,7 +1,8 @@
 import { randomInt, randomUUID } from "crypto";
 import { Temporal } from "temporal-polyfill";
 import type { Collection } from "mongodb";
-import type { Character, MediaItem, MediaVisibility, SiteContent } from "@/types";
+import type { Character, CharacterRole, MediaItem, MediaVisibility, SiteContent } from "@/types";
+import { isCharacterRole } from "@/lib/roles";
 import { getDb } from "./db";
 
 export const APP_NAME = "murder1900";
@@ -13,6 +14,7 @@ export interface CharacterRecord {
   access_code: string;
   story: string;
   public_story?: string;
+  role?: CharacterRole | null;
   media: MediaItem[];
   order: number;
   created_at: string;
@@ -229,6 +231,7 @@ export function serializeCharacter(record: CharacterRecord, includeCode = false)
     title: record.title ?? "",
     story: record.story ?? "",
     public_story: record.public_story ?? "",
+    role: isCharacterRole(record.role) ? record.role : null,
     order: record.order ?? 0,
     media: (record.media ?? []).map(({ id, kind, source, url, storage_path, blob_url, filename, content_type, visibility }) => ({
       id,
