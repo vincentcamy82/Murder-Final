@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { findCharacterById } from "@/lib/server/data";
 import { ApiError, handler } from "@/lib/server/http";
 import { pickPortrait } from "@/lib/server/portrait";
+import { publicPhotos } from "@/lib/media";
 import type { PublicBiography } from "@/types";
 
 export const GET = handler(async (_request, { params }: { params: Promise<{ charId: string }> }) => {
@@ -17,6 +18,9 @@ export const GET = handler(async (_request, { params }: { params: Promise<{ char
     portrait_storage_path: portrait?.storage_path ?? null,
     portrait_url: portrait?.url ?? null,
     portrait_source: portrait?.source ?? null,
+    photos: publicPhotos(character.media ?? [])
+      .filter((item) => item.id !== portrait?.id)
+      .map(({ id, source, url, storage_path }) => ({ id, source, url: url ?? null, storage_path: storage_path ?? null })),
   };
   return NextResponse.json(biography);
 });

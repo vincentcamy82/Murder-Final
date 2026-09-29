@@ -4,12 +4,13 @@ import type { MediaItem, MediaKind } from "@/types";
 import { requireAdmin } from "@/lib/server/auth";
 import { addMedia, serializeCharacter } from "@/lib/server/data";
 import { ApiError, handler } from "@/lib/server/http";
+import { visibilityForKind } from "@/lib/server/visibility";
 
 export const POST = handler(
   async (request, { params }: { params: Promise<{ charId: string }> }) => {
     await requireAdmin(request);
     const { charId } = await params;
-    const body = (await request.json()) as { kind?: string; url?: string };
+    const body = (await request.json()) as { kind?: string; url?: string; visibility?: unknown };
     if (body.kind !== "photo" && body.kind !== "video") {
       throw new ApiError(400, "Type de média invalide");
     }
@@ -18,6 +19,7 @@ export const POST = handler(
       kind: body.kind as MediaKind,
       source: "link",
       url: body.url ?? "",
+      visibility: visibilityForKind(body.kind, body.visibility),
     };
     const updated = await addMedia(charId, item);
     if (!updated) throw new ApiError(404, "Personnage introuvable");

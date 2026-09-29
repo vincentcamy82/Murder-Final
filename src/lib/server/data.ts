@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "crypto";
 import { Temporal } from "temporal-polyfill";
 import type { Collection } from "mongodb";
-import type { Character, MediaItem, SiteContent } from "@/types";
+import type { Character, MediaItem, MediaVisibility, SiteContent } from "@/types";
 import { getDb } from "./db";
 
 export const APP_NAME = "murder1900";
@@ -179,6 +179,18 @@ export async function removeMedia(id: string, mediaId: string): Promise<Characte
   );
 }
 
+export async function setMediaVisibility(
+  id: string,
+  mediaId: string,
+  visibility: MediaVisibility,
+): Promise<CharacterRecord | null> {
+  return (await charactersCollection()).findOneAndUpdate(
+    { id, "media.id": mediaId },
+    { $set: { "media.$.visibility": visibility } },
+    { returnDocument: "after" },
+  );
+}
+
 export async function getSiteRecord(): Promise<SiteRecord> {
   const settings = await settingsCollection();
   return ((await settings.findOne({ key: "site" })) ?? {}) as SiteRecord;
@@ -218,7 +230,7 @@ export function serializeCharacter(record: CharacterRecord, includeCode = false)
     story: record.story ?? "",
     public_story: record.public_story ?? "",
     order: record.order ?? 0,
-    media: (record.media ?? []).map(({ id, kind, source, url, storage_path, blob_url, filename, content_type }) => ({
+    media: (record.media ?? []).map(({ id, kind, source, url, storage_path, blob_url, filename, content_type, visibility }) => ({
       id,
       kind,
       source,
@@ -227,6 +239,7 @@ export function serializeCharacter(record: CharacterRecord, includeCode = false)
       blob_url: blob_url ?? null,
       filename: filename ?? null,
       content_type: content_type ?? null,
+      visibility: visibility ?? null,
     })),
   };
   if (includeCode) out.access_code = record.access_code ?? "";

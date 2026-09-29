@@ -1,5 +1,6 @@
 export type MediaKind = "photo" | "video";
 export type MediaSource = "link" | "upload";
+export type MediaVisibility = "public" | "private";
 
 export interface MediaItem {
   id: string;
@@ -10,6 +11,7 @@ export interface MediaItem {
   blob_url?: string | null;
   filename?: string | null;
   content_type?: string | null;
+  visibility?: MediaVisibility | null;
 }
 
 export interface Character {
@@ -25,7 +27,10 @@ export interface Character {
 
 export interface PublicBiography extends PublicCharacter {
   public_story: string;
+  photos: PublicPhoto[];
 }
+
+export type PublicPhoto = Pick<MediaItem, "id" | "source" | "url" | "storage_path">;
 
 export interface PublicCharacter {
   id: string;

@@ -10,13 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LogOut, Pencil, Plus, RefreshCw, Trash2, Upload, LinkIcon, Copy, Image as ImageIcon, Film, type LucideProps } from "lucide-react";
+import { LogOut, Pencil, Plus, RefreshCw, Trash2, Upload, LinkIcon, Copy, Image as ImageIcon, Film, Globe, Lock, type LucideProps } from "lucide-react";
 import AddGuestDialog from "@/components/AddGuestDialog";
 import TeaserSettings from "@/components/TeaserSettings";
 import SiteSettings from "@/components/SiteSettings";
 import { DEFAULT_SITE } from "@/lib/site";
 import { preparePhoto } from "@/lib/photo";
-import type { Character, MediaItem, MediaKind, SiteContent } from "@/types";
+import { photoVisibility, publicPhotos } from "@/lib/media";
+import type { Character, MediaItem, MediaKind, MediaVisibility, SiteContent } from "@/types";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -195,6 +196,7 @@ function EditDialog({
   const [uploading, setUploading] = useState(false);
   const [linkKind, setLinkKind] = useState<MediaKind>("photo");
   const [linkUrl, setLinkUrl] = useState("");
+  const [newPhotoVisibility, setNewPhotoVisibility] = useState<MediaVisibility>("private");
   const photoInput = useRef<HTMLInputElement | null>(null);
   const videoInput = useRef<HTMLInputElement | null>(null);
 
@@ -236,6 +238,7 @@ function EditDialog({
       const { data } = await api.post<Character>(`/admin/characters/${character.id}/media/link`, {
         kind: linkKind,
         url: linkUrl,
+        ...(linkKind === "photo" && { visibility: newPhotoVisibility }),
       });
       onSaved(data);
       setLinkUrl("");
@@ -254,6 +257,7 @@ function EditDialog({
       const form = new FormData();
       form.append("kind", kind);
       form.append("file", prepared);
+      if (kind === "photo") form.append("visibility", newPhotoVisibility);
       toast.loading("Téléversement…", { id: t });
       const { data } = await api.post<Character>(`/admin/characters/${character.id}/media/upload`, form);
       onSaved(data);
@@ -275,9 +279,20 @@ function EditDialog({
     }
   };
 
+  const changeVisibility = async (mediaId: string, visibility: MediaVisibility) => {
+    try {
+      const { data } = await api.patch<Character>(`/admin/characters/${character.id}/media/${mediaId}`, { visibility });
+      onSaved(data);
+      toast.success(`Photo déplacée : ${VISIBILITY_OPTIONS[visibility].label}`);
+    } catch (err) {
+      toast.error(formatError(errorDetail(err)));
+    }
+  };
+
   const srcFor = (m: MediaItem) => (m.source === "upload" ? fileUrl(m.storage_path ?? "") : m.url ?? "");
   const photos = media.filter((m) => m.kind === "photo");
   const videos = media.filter((m) => m.kind === "video");
+  const portraitId = publicPhotos(media)[0]?.id;
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -326,6 +341,7 @@ function EditDialog({
               accept="image/*"
               inputRef={photoInput}
               onUpload={(f) => uploadFile("photo", f)}
+              visibilityPicker={{ value: newPhotoVisibility, onChange: setNewPhotoVisibility }}
               linkUrl={linkKind === "photo" ? linkUrl : ""}
               onLinkChange={(v) => {
                 setLinkKind("photo");
@@ -336,6 +352,9 @@ function EditDialog({
                 addLink();
               }}
             />
+            <p className="text-xs text-parch/50">
+              Une photo publique apparaît dans la biographie publique ; une photo privée seulement dans le dossier du joueur. La première photo publique sert de portrait.
+            </p>
             {photos.length === 0 ? (
               <p className="py-6 text-center font-serif italic text-parch/40">Aucune photo.</p>
             ) : (
@@ -343,6 +362,16 @@ function EditDialog({
                 {photos.map((m) => (
                   <div key={m.id} className="group relative overflow-hidden rounded-sm border border-white/10">
                     <img src={srcFor(m)} alt="" className="aspect-square w-full object-cover" />
+                    <div className="absolute inset-x-1 bottom-1 flex flex-wrap items-center gap-1">
+                      <PhotoVisibilityToggle
+                        testid={`visibility-${m.id}`}
+                        visibility={photoVisibility(m, media)}
+                        onChange={(visibility) => changeVisibility(m.id, visibility)}
+                      />
+                      {m.id === portraitId && (
+                        <span className="rounded-sm bg-brass px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-black">Portrait</span>
+                      )}
+                    </div>
                     <button data-testid={`del-media-${m.id}`} onClick={() => removeMedia(m.id)} className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-red-400 opacity-0 transition-opacity group-hover:opacity-100">
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -408,6 +437,7 @@ function MediaAdder({
   accept,
   inputRef,
   onUpload,
+  visibilityPicker,
   linkUrl,
   onLinkChange,
   onAddLink,
@@ -418,6 +448,7 @@ function MediaAdder({
   accept: string;
   inputRef: RefObject<HTMLInputElement | null>;
   onUpload: (file: File | undefined) => void;
+  visibilityPicker?: { value: MediaVisibility; onChange: (visibility: MediaVisibility) => void };
   linkUrl: string;
   onLinkChange: (value: string) => void;
   onAddLink: () => void;
@@ -429,6 +460,28 @@ function MediaAdder({
       <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-parch/50">
         <Icon className="h-4 w-4 text-brass" /> Ajouter un média
       </div>
+      {visibilityPicker && (
+        <div role="radiogroup" aria-label="Où publier la photo" className="grid grid-cols-2 gap-2">
+          {VISIBILITY_ORDER.map((value) => {
+            const { label, icon: OptionIcon } = VISIBILITY_OPTIONS[value];
+            return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={visibilityPicker.value === value}
+              data-testid={`new-photo-${value}`}
+              onClick={() => visibilityPicker.onChange(value)}
+              className={`flex items-center justify-center gap-2 border px-3 py-2 font-mono text-xs uppercase tracking-widest transition-colors ${
+                visibilityPicker.value === value ? "border-brass bg-brass text-black" : "border-white/20 text-parch/60 hover:text-parch"
+              }`}
+            >
+              <OptionIcon className="h-3.5 w-3.5" /> {label}
+            </button>
+            );
+          })}
+        </div>
+      )}
       <div>
         <input
           ref={inputRef}
@@ -463,5 +516,35 @@ function MediaAdder({
         </Button>
       </div>
     </div>
+  );
+}
+
+const VISIBILITY_OPTIONS: Record<MediaVisibility, { label: string; badge: string; opposite: MediaVisibility; icon: ComponentType<LucideProps> }> = {
+  private: { label: "Dossier privé", badge: "Privée", opposite: "public", icon: Lock },
+  public: { label: "Bio publique", badge: "Publique", opposite: "private", icon: Globe },
+};
+
+const VISIBILITY_ORDER: MediaVisibility[] = ["private", "public"];
+
+function PhotoVisibilityToggle({
+  testid,
+  visibility,
+  onChange,
+}: {
+  testid: string;
+  visibility: MediaVisibility;
+  onChange: (visibility: MediaVisibility) => void;
+}) {
+  const { badge, opposite, icon: Icon } = VISIBILITY_OPTIONS[visibility];
+  return (
+    <button
+      type="button"
+      data-testid={testid}
+      onClick={() => onChange(opposite)}
+      title={`Déplacer vers : ${VISIBILITY_OPTIONS[opposite].label}`}
+      className="flex items-center gap-1 rounded-sm bg-black/75 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-parch hover:text-brass"
+    >
+      <Icon className="h-3 w-3" /> {badge}
+    </button>
   );
 }

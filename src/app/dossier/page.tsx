@@ -6,6 +6,7 @@ import { api, API, fileUrl, clearToken } from "@/lib/api";
 import VideoGallery, { VideoPlayer } from "@/components/VideoGallery";
 import BiographyBackground from "@/components/BiographyBackground";
 import { DEFAULT_SITE } from "@/lib/site";
+import { privatePhotos } from "@/lib/media";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import type { Character, MediaItem, SiteContent } from "@/types";
@@ -46,7 +47,7 @@ export default function Dossier() {
     );
   if (!character) return null;
 
-  const photos = character.media.filter((m) => m.kind === "photo");
+  const photos = privatePhotos(character.media);
   const videos = character.media.filter((m) => m.kind === "video");
 
   const srcFor = (m: MediaItem) => (m.source === "upload" ? fileUrl(m.storage_path ?? "") : m.url ?? "");

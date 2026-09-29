@@ -2,10 +2,10 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, Film, ScrollText } from "lucide-react";
+import { FileText, Film, Image as ImageIcon, ScrollText } from "lucide-react";
 import { api, API, fileUrl, errorDetail, formatError } from "@/lib/api";
 import { DEFAULT_SITE } from "@/lib/site";
-import type { PublicBiography, SiteContent } from "@/types";
+import type { PublicBiography, PublicPhoto, SiteContent } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BiographyBackground from "@/components/BiographyBackground";
 import PrivateBiographyAccess from "@/components/PrivateBiographyAccess";
@@ -16,6 +16,7 @@ export default function Biography({ params }: { params: Promise<{ charId: string
   const [biography, setBiography] = useState<PublicBiography | null>(null);
   const [site, setSite] = useState<SiteContent>(DEFAULT_SITE);
   const [error, setError] = useState("");
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -34,6 +35,7 @@ export default function Biography({ params }: { params: Promise<{ charId: string
   }, [charId]);
 
   const portrait = biography?.portrait_storage_path ? fileUrl(biography.portrait_storage_path) : biography?.portrait_url;
+  const photoSrc = (photo: PublicPhoto) => (photo.source === "upload" ? fileUrl(photo.storage_path ?? "") : photo.url ?? "");
 
   return (
     <div className="relative min-h-screen bg-noir-950 text-parch">
@@ -57,16 +59,38 @@ export default function Biography({ params }: { params: Promise<{ charId: string
             <Tabs defaultValue="story" className="lg:col-span-2">
               <TabsList className="mb-6 bg-noir-paper">
                 <TabsTrigger value="story" className="gap-2"><FileText className="h-4 w-4" /> Récit</TabsTrigger>
+                {biography.photos.length > 0 && (
+                  <TabsTrigger value="photos" className="gap-2"><ImageIcon className="h-4 w-4" /> Photos ({biography.photos.length})</TabsTrigger>
+                )}
                 <TabsTrigger value="videos" className="gap-2"><Film className="h-4 w-4" /> Vidéos ({site.teasers.length})</TabsTrigger>
               </TabsList>
               <TabsContent value="story" className="rounded-md border border-white/10 bg-noir-paper p-8">
                 <p className="whitespace-pre-wrap font-mono text-sm leading-loose">{biography.public_story || "La biographie de ce personnage sera bientôt dévoilée."}</p>
+              </TabsContent>
+              <TabsContent value="photos">
+                <div className="columns-1 gap-4 sm:columns-2 [&>*]:mb-4">
+                  {biography.photos.map((photo) => (
+                    <button
+                      key={photo.id}
+                      data-testid={`public-photo-${photo.id}`}
+                      onClick={() => setLightbox(photoSrc(photo))}
+                      className="block w-full break-inside-avoid overflow-hidden rounded-sm border-4 border-parch/90 bg-parch p-0 shadow-lg transition-transform hover:-translate-y-1"
+                    >
+                      <img src={photoSrc(photo)} alt="" className="w-full object-cover" loading="lazy" />
+                    </button>
+                  ))}
+                </div>
               </TabsContent>
               <TabsContent value="videos"><VideoGallery videos={site.teasers} /></TabsContent>
             </Tabs>
           </div>
         )}
       </main>
+      {lightbox && (
+        <div onClick={() => setLightbox(null)} className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-6 backdrop-blur-sm">
+          <img src={lightbox} alt="" className="max-h-[90vh] max-w-full rounded-sm border-8 border-parch/90 shadow-2xl" />
+        </div>
+      )}
     </div>
   );
 }

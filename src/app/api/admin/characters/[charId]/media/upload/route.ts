@@ -6,6 +6,7 @@ import { APP_NAME, addMedia, findCharacterById, serializeCharacter } from "@/lib
 import { ApiError, handler } from "@/lib/server/http";
 import { MIME_TYPES, fileExtension, saveObject } from "@/lib/server/storage";
 import { MAX_PHOTO_BYTES, PHOTO_TYPES } from "@/lib/photo";
+import { visibilityForKind } from "@/lib/server/visibility";
 
 export const POST = handler(
   async (request, { params }: { params: Promise<{ charId: string }> }) => {
@@ -16,6 +17,7 @@ export const POST = handler(
     const file = form.get("file");
     if (kind !== "photo" && kind !== "video") throw new ApiError(400, "Type de média invalide");
     if (!(file instanceof File)) throw new ApiError(400, "Fichier manquant");
+    const visibility = visibilityForKind(kind, form.get("visibility"));
 
     const existing = await findCharacterById(charId);
     if (!existing) throw new ApiError(404, "Personnage introuvable");
@@ -38,6 +40,7 @@ export const POST = handler(
       blob_url: stored.blobUrl,
       filename: file.name,
       content_type: contentType,
+      visibility,
     };
     const updated = await addMedia(charId, item);
     if (!updated) throw new ApiError(404, "Personnage introuvable");

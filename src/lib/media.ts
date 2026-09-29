@@ -1,3 +1,5 @@
+import type { MediaItem, MediaVisibility } from "@/types";
+
 const YOUTUBE_PATTERNS = [
   /(?:youtube\.com\/watch\?v=)([\w-]+)/,
   /(?:youtu\.be\/)([\w-]+)/,
@@ -19,4 +21,24 @@ export function youtubeEmbed(url: string | null | undefined): string | null {
 export function vimeoEmbed(url: string | null | undefined): string | null {
   const m = url && url.match(VIMEO_PATTERN);
   return m ? `https://player.vimeo.com/video/${m[1]}` : null;
+}
+
+// Avant le choix de visibilité, la première photo servait de portrait public : elle le reste tant qu'elle n'a pas été classée et qu'aucune photo n'est publique.
+function legacyPortrait(media: MediaItem[]): MediaItem | undefined {
+  const photos = media.filter((m) => m.kind === "photo");
+  if (photos.some((m) => m.visibility === "public")) return undefined;
+  return photos[0]?.visibility == null ? photos[0] : undefined;
+}
+
+export function photoVisibility(item: MediaItem, media: MediaItem[]): MediaVisibility {
+  if (item.visibility) return item.visibility;
+  return item.id === legacyPortrait(media)?.id ? "public" : "private";
+}
+
+export function publicPhotos(media: MediaItem[]): MediaItem[] {
+  return media.filter((m) => m.kind === "photo" && photoVisibility(m, media) === "public");
+}
+
+export function privatePhotos(media: MediaItem[]): MediaItem[] {
+  return media.filter((m) => m.kind === "photo" && photoVisibility(m, media) === "private");
 }
