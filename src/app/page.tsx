@@ -8,6 +8,7 @@ import { DEFAULT_SITE, backgroundUrl } from "@/lib/site";
 import type { PublicCharacter, SiteContent } from "@/types";
 import { MapPin, Hourglass, Lock } from "lucide-react";
 import VideoGallery from "@/components/VideoGallery";
+import AmbientMusic from "@/components/AmbientMusic";
 
 const makePortrait = (label: string, background: string, accent: string) => {
   const svg = `
@@ -116,6 +117,7 @@ export default function Landing() {
 
   return (
     <div className="aged-bg min-h-screen text-[#e8dcc2]" style={{ fontFamily: bodyFont }}>
+      <AmbientMusic track="/audio/ambiance.mp3" />
 
       <header className="sticky top-0 z-50 flex items-center justify-between border-b-2 border-[#4a3418] bg-[#160f08]/95 px-6 py-4 backdrop-blur-md">
         <div className="flex items-center gap-3 text-lg tracking-[0.2em] text-[#c8a24e]" style={{ fontFamily: CAPS }}>
