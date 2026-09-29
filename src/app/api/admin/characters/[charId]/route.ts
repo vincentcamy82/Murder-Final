@@ -18,6 +18,7 @@ export const PUT = handler(
       title?: string | null;
       access_code?: string | null;
       story?: string | null;
+      public_story?: string | null;
     };
     const existing = await findCharacterById(charId);
     if (!existing) throw new ApiError(404, "Personnage introuvable");
@@ -33,6 +34,11 @@ export const PUT = handler(
     if (body.name !== null && body.name !== undefined) fields.name = body.name;
     if (body.title !== null && body.title !== undefined) fields.title = body.title;
     if (body.story !== null && body.story !== undefined) fields.story = body.story;
+
+    if (body.public_story !== null && body.public_story !== undefined) {
+      if (typeof body.public_story !== "string" || body.public_story.length > 20000) throw new ApiError(400, "Biographie publique invalide (20 000 caractères maximum)");
+      fields.public_story = body.public_story;
+    }
 
     const updated = Object.keys(fields).length ? await updateCharacter(charId, fields) : existing;
     if (!updated) throw new ApiError(404, "Personnage introuvable");

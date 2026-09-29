@@ -12,12 +12,15 @@ export interface CharacterRecord {
   title: string;
   access_code: string;
   story: string;
+  public_story?: string;
   media: MediaItem[];
   order: number;
   created_at: string;
 }
 
-export interface SiteRecord extends Partial<Omit<SiteContent, "has_background_upload">> {
+export interface SiteRecord extends Partial<Omit<SiteContent, "has_background_upload" | "has_biography_background_upload">> {
+  biography_background_path?: string | null;
+  biography_background_blob_url?: string | null;
   background_path?: string | null;
   background_blob_url?: string | null;
 }
@@ -40,7 +43,7 @@ const SEED_CHARACTERS: Array<[string, string]> = [
   ["Kass", "Invité"],
 ];
 
-const SITE_DEFAULTS: Omit<SiteContent, "has_background_upload" | "updated_at"> = {
+const SITE_DEFAULTS: Omit<SiteContent, "has_background_upload" | "has_biography_background_upload" | "updated_at"> = {
   eyebrow: "Anno Domini · MCMIII",
   title: "Qui a tué",
   title_highlight: "la Comtesse ?",
@@ -53,6 +56,9 @@ const SITE_DEFAULTS: Omit<SiteContent, "has_background_upload" | "updated_at"> =
   guests_label: "Liste des convives",
   font_heading: "Cormorant Garamond",
   font_body: "Manrope",
+  biography_background_source: "url",
+  biography_background_url: "",
+  teasers: [],
   background_source: "url",
   background_url:
     "https://images.unsplash.com/photo-1481018085669-2bc6e4f00eed?auto=format&fit=crop&w=1920&q=80",
@@ -182,7 +188,7 @@ export async function updateSiteRecord(fields: Record<string, unknown>): Promise
   const settings = await settingsCollection();
   const doc = await settings.findOneAndUpdate(
     { key: "site" },
-    { $set: { ...fields, updated_at: new Date().toISOString() } },
+    { $set: { ...fields, updated_at: Temporal.Now.instant().toString() } },
     { upsert: true, returnDocument: "after" },
   );
   return (doc ?? {}) as SiteRecord;
@@ -199,6 +205,7 @@ export function serializeSite(site: SiteRecord): SiteContent {
   return {
     ...out,
     has_background_upload: Boolean(site.background_path),
+    has_biography_background_upload: Boolean(site.biography_background_path),
     updated_at: site.updated_at ?? "",
   };
 }
@@ -209,6 +216,7 @@ export function serializeCharacter(record: CharacterRecord, includeCode = false)
     name: record.name,
     title: record.title ?? "",
     story: record.story ?? "",
+    public_story: record.public_story ?? "",
     order: record.order ?? 0,
     media: (record.media ?? []).map(({ id, kind, source, url, storage_path, blob_url, filename, content_type }) => ({
       id,

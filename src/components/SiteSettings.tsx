@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { api, API, formatError, errorDetail } from "@/lib/api";
-import { HEADING_FONTS, BODY_FONTS, backgroundUrl } from "@/lib/site";
-import { preparePhoto } from "@/lib/photo";
+import { api, formatError, errorDetail } from "@/lib/api";
+import { HEADING_FONTS, BODY_FONTS } from "@/lib/site";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Save, ImageIcon, LinkIcon } from "lucide-react";
+import { Save } from "lucide-react";
+import BackgroundSettings from "@/components/BackgroundSettings";
 import type { SiteContent } from "@/types";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -30,7 +30,6 @@ export default function SiteSettings({
 }) {
   const [form, setForm] = useState<SiteContent>(site);
   const [saving, setSaving] = useState(false);
-  const [bgUrl, setBgUrl] = useState(site.background_source === "url" ? site.background_url : "");
 
   const set = <K extends keyof SiteContent>(k: K, v: SiteContent[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -38,7 +37,19 @@ export default function SiteSettings({
   const save = async () => {
     setSaving(true);
     try {
-      const { data } = await api.put<SiteContent>("/admin/site", form);
+      const { data } = await api.put<SiteContent>("/admin/site", {
+        eyebrow: form.eyebrow,
+        title: form.title,
+        title_highlight: form.title_highlight,
+        story: form.story,
+        story_highlight: form.story_highlight,
+        countdown_label: form.countdown_label,
+        event_date: form.event_date,
+        code_label: form.code_label,
+        guests_label: form.guests_label,
+        font_heading: form.font_heading,
+        font_body: form.font_body,
+      });
       setSite(data);
       setForm(data);
       toast.success("Apparence enregistrée");
@@ -49,37 +60,19 @@ export default function SiteSettings({
     }
   };
 
-  const applyUrl = async () => {
-    if (!bgUrl.trim()) return;
-    try {
-      const { data } = await api.put<SiteContent>("/admin/site", {
-        background_source: "url",
-        background_url: bgUrl,
-      });
-      setSite(data);
-      setForm(data);
-      toast.success("Image de fond mise à jour");
-    } catch (err) {
-      toast.error(formatError(errorDetail(err)));
-    }
+  const backgroundSaved = (updated: SiteContent) => {
+    setSite(updated);
+    setForm((current) => ({
+      ...current,
+      background_source: updated.background_source,
+      background_url: updated.background_url,
+      has_background_upload: updated.has_background_upload,
+      biography_background_source: updated.biography_background_source,
+      biography_background_url: updated.biography_background_url,
+      has_biography_background_upload: updated.has_biography_background_upload,
+      updated_at: updated.updated_at,
+    }));
   };
-
-  const uploadBg = async (file: File | undefined) => {
-    if (!file) return;
-    const t = toast.loading("Téléversement…");
-    try {
-      const fd = new FormData();
-      fd.append("file", await preparePhoto(file));
-      const { data } = await api.post<SiteContent>("/admin/site/background/upload", fd);
-      setSite(data);
-      setForm(data);
-      toast.success("Image de fond téléversée", { id: t });
-    } catch (err) {
-      toast.error(formatError(errorDetail(err) ?? (err instanceof Error ? err.message : undefined)), { id: t });
-    }
-  };
-
-  const preview = backgroundUrl(form, API);
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -162,37 +155,8 @@ export default function SiteSettings({
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-md border border-white/10 bg-noir-paper p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-          <h2 className="mb-4 flex items-center gap-2 font-serif text-xl text-parch">
-            <ImageIcon className="h-5 w-5 text-brass" /> Image de fond
-          </h2>
-          <div className="mb-4 aspect-video w-full overflow-hidden rounded-sm border border-white/10 bg-black">
-            <img src={preview} alt="aperçu" className="h-full w-full object-cover" data-testid="site-bg-preview" />
-          </div>
-          <label className="mb-2 block font-mono text-xs uppercase tracking-[0.2em] text-brass">Téléverser une image</label>
-          <input
-            id="bg-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            data-testid="site-bg-upload-input"
-            onChange={(e) => {
-              uploadBg(e.target.files?.[0]);
-              e.target.value = "";
-            }}
-          />
-          <Button data-testid="site-bg-upload-btn" variant="outline" onClick={() => document.getElementById("bg-upload")?.click()} className="w-full gap-2 rounded-none border-white/20 font-mono text-xs uppercase tracking-widest">
-            <Upload className="h-4 w-4" /> Choisir un fichier
-          </Button>
-          <div className="my-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-parch/30">
-            <div className="h-px flex-1 bg-white/10" /> ou <div className="h-px flex-1 bg-white/10" />
-          </div>
-          <label className="mb-2 block font-mono text-xs uppercase tracking-[0.2em] text-brass">Utiliser une URL</label>
-          <Input data-testid="site-bg-url" value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} placeholder="https://…" className="rounded-none border-white/20 bg-transparent font-mono text-xs" />
-          <Button data-testid="site-bg-url-btn" onClick={applyUrl} className="mt-3 w-full gap-2 rounded-none bg-brass font-mono text-xs uppercase tracking-widest text-black hover:bg-brass/90">
-            <LinkIcon className="h-3.5 w-3.5" /> Appliquer l&apos;URL
-          </Button>
-        </div>
+        <BackgroundSettings target="home" site={form} onSaved={backgroundSaved} />
+        <BackgroundSettings target="biography" site={form} onSaved={backgroundSaved} />
       </div>
     </div>
   );

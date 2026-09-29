@@ -5,9 +5,11 @@ import { APP_NAME, getSiteRecord, serializeSite, updateSiteRecord } from "@/lib/
 import { ApiError, handler } from "@/lib/server/http";
 import { MIME_TYPES, deleteObject, fileExtension, saveObject } from "@/lib/server/storage";
 import { MAX_PHOTO_BYTES, PHOTO_TYPES } from "@/lib/photo";
+import { backgroundFields } from "@/lib/server/site-background";
 
 export const POST = handler(async (request) => {
   await requireAdmin(request);
+  const fields = backgroundFields(request);
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File)) throw new ApiError(400, "Fichier manquant");
@@ -20,12 +22,13 @@ export const POST = handler(async (request) => {
   const previous = await getSiteRecord();
   const stored = await saveObject(pathname, await file.arrayBuffer(), contentType);
   const site = await updateSiteRecord({
-    background_source: "upload",
-    background_path: stored.path,
-    background_blob_url: stored.blobUrl,
+    [fields.source]: "upload",
+    [fields.path]: stored.path,
+    [fields.blob]: stored.blobUrl,
   });
-  if (previous.background_path && !previous.background_blob_url) {
-    await deleteObject(previous.background_path);
+  const previousPath = previous[fields.path];
+  if (previousPath && !previous[fields.blob]) {
+    await deleteObject(previousPath);
   }
   return NextResponse.json(serializeSite(site));
 });
