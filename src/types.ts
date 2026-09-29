@@ -17,9 +17,14 @@ export interface Character {
   name: string;
   title: string;
   story: string;
+  public_story: string;
   order: number;
   media: MediaItem[];
   access_code?: string;
+}
+
+export interface PublicBiography extends PublicCharacter {
+  public_story: string;
 }
 
 export interface PublicCharacter {
@@ -29,6 +34,12 @@ export interface PublicCharacter {
   portrait_storage_path: string | null;
   portrait_url: string | null;
   portrait_source: MediaSource | null;
+}
+
+export interface TeaserVideo {
+  id: string;
+  title: string;
+  url: string;
 }
 
 export interface SiteContent {
@@ -46,6 +57,10 @@ export interface SiteContent {
   background_source: "url" | "upload";
   background_url: string;
   has_background_upload: boolean;
+  biography_background_source: "url" | "upload";
+  biography_background_url: string;
+  has_biography_background_upload: boolean;
+  teasers: TeaserVideo[];
   updated_at: string;
 }
 

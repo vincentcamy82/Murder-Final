@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, API, setToken, formatError, errorDetail, fileUrl } from "@/lib/api";
+import { api, API, fileUrl } from "@/lib/api";
 import { DEFAULT_SITE, backgroundUrl } from "@/lib/site";
 import type { PublicCharacter, SiteContent } from "@/types";
-import { MapPin, Hourglass, KeyRound, Lock } from "lucide-react";
+import { MapPin, Hourglass, Lock } from "lucide-react";
+import VideoGallery from "@/components/VideoGallery";
 import AmbientMusic from "@/components/AmbientMusic";
 
 const makePortrait = (label: string, background: string, accent: string) => {
@@ -104,38 +106,10 @@ export default function Landing() {
   const router = useRouter();
   const [guests, setGuests] = useState<PublicCharacter[]>([]);
   const [site, setSite] = useState<SiteContent>(DEFAULT_SITE);
-  const [code, setCode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
   useEffect(() => {
     api.get<PublicCharacter[]>("/characters/public").then((r) => setGuests(r.data)).catch(() => {});
     api.get<SiteContent>("/site").then((r) => setSite({ ...DEFAULT_SITE, ...r.data })).catch(() => {});
   }, []);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!code.trim()) return;
-    setLoading(true);
-    try {
-      const { data } = await api.post("/auth/character", { code });
-      setToken(data.token);
-      router.push("/dossier");
-    } catch (err) {
-      setError(formatError(errorDetail(err)));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const scrollToEnter = () => {
-    document.getElementById("enter")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    setTimeout(
-      () => document.querySelector<HTMLInputElement>('[data-testid="character-code-input"]')?.focus(),
-      400,
-    );
-  };
 
   const bodyFont = `'${site.font_body}', serif`;
   const bg = backgroundUrl(site, API);
@@ -143,7 +117,7 @@ export default function Landing() {
 
   return (
     <div className="aged-bg min-h-screen text-[#e8dcc2]" style={{ fontFamily: bodyFont }}>
-      <AmbientMusic />
+      <AmbientMusic track="/audio/ambiance.mp3" />
 
       <header className="sticky top-0 z-50 flex items-center justify-between border-b-2 border-[#4a3418] bg-[#160f08]/95 px-6 py-4 backdrop-blur-md">
         <div className="flex items-center gap-3 text-lg tracking-[0.2em] text-[#c8a24e]" style={{ fontFamily: CAPS }}>
@@ -153,6 +127,7 @@ export default function Landing() {
         <nav className="hidden gap-8 text-xs uppercase tracking-[0.25em] text-[#b09a72] md:flex" style={{ fontFamily: SC }}>
           <a href="#recit" className="transition hover:text-[#c8a24e]">Le Récit</a>
           <a href="#suspects" className="transition hover:text-[#c8a24e]">Les Convives</a>
+          <Link href="/videos" className="transition hover:text-[#c8a24e]">Vidéos</Link>
           <a href="#infos" className="transition hover:text-[#c8a24e]">Infos Pratiques</a>
         </nav>
       </header>
@@ -190,31 +165,11 @@ export default function Landing() {
 
         <Countdown label={site.countdown_label} eventDate={site.event_date} />
 
-        <form id="enter" onSubmit={submit} className="relative mx-auto mt-12 w-full max-w-md paper deckle p-8 text-[#2b2016]">
-          <p className="mb-5 text-2xl italic text-[#3a2a17]" style={{ fontFamily: DISPLAY }}>Carton d&apos;invitation</p>
-          <label className="mb-3 flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.25em] text-[#6e4b22]" style={{ fontFamily: SC }}>
-            <KeyRound className="h-4 w-4" /> {site.code_label}
-          </label>
-          <input
-            data-testid="character-code-input"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="XXXXXX"
-            maxLength={12}
-            className="w-full border-b-2 border-[#6e4b22]/50 bg-transparent px-2 py-2 text-center text-3xl tracking-[0.3em] text-[#2b2016] placeholder:text-[#6e4b22]/30 focus:border-[#6e4b22] focus:outline-none"
-            style={{ fontFamily: DISPLAY }}
-          />
-          {error && <p data-testid="code-error" className="mt-4 text-center text-sm text-[#8a2020]">{error}</p>}
-          <button
-            data-testid="enter-btn"
-            type="submit"
-            disabled={loading}
-            className="mt-7 w-full border border-[#3a2a17] bg-[#3a2a17] px-8 py-3 text-xs uppercase tracking-[0.25em] text-[#efe4cb] transition hover:bg-[#2b2016] disabled:opacity-60"
-            style={{ fontFamily: SC }}
-          >
-            {loading ? "Vérification..." : "Ouvrir mon dossier"}
-          </button>
-        </form>
+        <div className="relative mx-auto mt-12 max-w-3xl text-left" data-testid="home-teasers">
+          <h2 className="mb-6 text-center font-serif text-3xl text-[#c8a24e]">Les teasers de la soirée</h2>
+          <VideoGallery videos={site.teasers} />
+          <Link href="/videos" className="mt-6 block text-center text-brass underline underline-offset-4">Toutes les vidéos</Link>
+        </div>
       </section>
 
       <section id="suspects" className="mx-auto max-w-6xl px-6 py-20">
@@ -269,14 +224,14 @@ export default function Landing() {
                   <h3 className="text-2xl italic text-[#efe4cb] transition-colors group-hover:text-[#c8a24e]" style={{ fontFamily: DISPLAY }}>
                     {char.name}
                   </h3>
-                  <button
+                  <Link
                     data-testid={`suspect-${i}`}
-                    onClick={scrollToEnter}
+                    href={`/biographies/${char.id}`}
                     className="mt-3 text-[11px] uppercase tracking-[0.25em] text-[#a8863f] underline decoration-[#a8863f]/40 underline-offset-4 transition hover:text-[#e8dcc2]"
                     style={{ fontFamily: SC }}
                   >
-                    Consulter le dossier
-                  </button>
+                    Lire la biographie
+                  </Link>
                 </div>
               </div>
             );

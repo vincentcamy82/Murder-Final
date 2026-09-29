@@ -21,9 +21,17 @@ npm run build
 
 Le stockage reste gratuit avec MongoDB Atlas Free / M0 et Vercel Hobby, dans leurs quotas. MongoDB fournit [512 Mo partagés entre les données, les images et les index](https://www.mongodb.com/pricing). Le quota n’augmente pas automatiquement : lorsqu’il est plein, il faut supprimer des médias. La suppression d’une image et le remplacement du fond libèrent les fichiers correspondants dans MongoDB.
 
-## Musique d’accueil
+## Biographies, teasers et ambiance
 
-La musique est extraite du fichier « Musique accueil_ » fourni pour le site. Elle démarre automatiquement en boucle à l’ouverture de l’accueil. Si le navigateur bloque la lecture automatique, elle démarre au premier clic ou à la première touche. Le bouton « Couper la musique » la met en pause et « Écouter l’ambiance » la relance. Pour la remplacer, remplacer `public/audio/ambiance.mp3` par le fichier MP3 souhaité.
+Les portraits de l’accueil ouvrent les biographies publiques (`/biographies/[id]`). Dans l’espace organisateur, chaque fiche dispose d’un champ **Biographie publique** distinct du récit privé existant. Ce nouveau champ est vide par défaut : aucun secret existant n’est publié. Le bouton **Accéder à ma bio privée** ouvre la saisie du code personnel et donne accès au dossier attribué à ce code.
+
+L’onglet **Vidéos** de l’espace organisateur permet d’ajouter, réordonner et retirer les teasers (titre et lien HTTPS YouTube, Vimeo ou fichier MP4 hébergé). Cliquer sur **Enregistrer les vidéos** les publie sur l’accueil, `/videos` et l’onglet Vidéos de toutes les biographies. Les vidéos privées des dossiers restent réservées à leurs joueurs.
+
+L’onglet **Apparence du site** propose un fond pour l’accueil et un fond indépendant pour toutes les biographies, publiques et privées. Chaque fond accepte une image téléversée ou une URL. Le fond des biographies peut être retiré. Les sauvegardes de fond sont immédiates et préservent les modifications de texte en cours.
+
+L’accueil garde sa musique d’origine (`public/audio/ambiance.mp3`). Les biographies publiques et le dossier privé jouent leur propre musique, extraite du fichier « Musique .mp4 » fourni (`public/audio/biographie.mp3`, environ 31 secondes). Chaque piste tente de démarrer automatiquement en boucle à l’arrivée sur sa page ; si le navigateur bloque le son automatique, elle démarre au premier clic ou à la première touche, ou via **Écouter l’ambiance**. **Couper la musique** la met en pause. Les autres pages (`/videos`, espace organisateur) n’ont pas de musique. Pour changer une piste, remplacer le fichier MP3 correspondant.
+
+Les ajouts aux contrats sont compatibles avec les documents MongoDB existants : `public_story` sur les personnages, `teasers` et `biography_background_*` dans les paramètres du site, avec des valeurs vides par défaut. Le nouvel endpoint public `/api/characters/public/[id]` ne renvoie ni récit privé, ni code, ni liste de médias privés.
 
 ## Limites connues
 

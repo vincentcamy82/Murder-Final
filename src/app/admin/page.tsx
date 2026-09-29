@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LogOut, Pencil, Plus, RefreshCw, Trash2, Upload, LinkIcon, Copy, Image as ImageIcon, Film, type LucideProps } from "lucide-react";
 import AddGuestDialog from "@/components/AddGuestDialog";
+import TeaserSettings from "@/components/TeaserSettings";
 import SiteSettings from "@/components/SiteSettings";
 import { DEFAULT_SITE } from "@/lib/site";
 import { preparePhoto } from "@/lib/photo";
@@ -91,6 +92,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="site" data-testid="main-tab-site" className="rounded-none border-b-2 border-transparent bg-transparent px-4 pb-3 font-mono text-xs uppercase tracking-widest text-parch/50 data-[state=active]:border-brass data-[state=active]:bg-transparent data-[state=active]:text-brass data-[state=active]:shadow-none">
               Apparence du site
             </TabsTrigger>
+            <TabsTrigger value="teasers" className="rounded-none border-b-2 border-transparent bg-transparent px-4 pb-3 font-mono text-xs uppercase tracking-widest text-parch/50 data-[state=active]:border-brass data-[state=active]:text-brass">Vidéos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="characters">
@@ -151,6 +153,9 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
+          <TabsContent value="teasers">
+            <TeaserSettings site={site} setSite={setSite} />
+          </TabsContent>
           <TabsContent value="site">
             <SiteSettings site={site} setSite={setSite} />
           </TabsContent>
@@ -184,6 +189,7 @@ function EditDialog({
   const [name, setName] = useState(character.name);
   const [title, setTitle] = useState(character.title || "");
   const [accessCode, setAccessCode] = useState(character.access_code ?? "");
+  const [publicStory, setPublicStory] = useState(character.public_story || "");
   const [story, setStory] = useState(character.story || "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -202,6 +208,7 @@ function EditDialog({
         title,
         access_code: accessCode,
         story,
+        public_story: publicStory,
       });
       onSaved(data);
       toast.success("Fiche enregistrée");
@@ -301,7 +308,10 @@ function EditDialog({
                 </Button>
               </div>
             </Field>
-            <Field label="Récit / Indices du personnage">
+            <Field label="Biographie publique (visible par tous)">
+              <Textarea data-testid="edit-public-story" value={publicStory} onChange={(e) => setPublicStory(e.target.value)} maxLength={20000} rows={6} className="rounded-none border-white/20 bg-transparent font-mono text-sm" placeholder="Présentez le personnage sans révéler ses secrets…" />
+            </Field>
+            <Field label="Récit privé / Indices du personnage">
               <Textarea data-testid="edit-story" value={story} onChange={(e) => setStory(e.target.value)} rows={10} className="rounded-none border-white/20 bg-transparent font-mono text-sm leading-relaxed" placeholder="Écrivez ici l'histoire secrète, les objectifs et les indices de ce joueur…" />
             </Field>
             <Button data-testid="save-info" onClick={saveInfo} disabled={saving} className="w-full rounded-none bg-brass py-5 font-mono text-xs uppercase tracking-widest text-black hover:bg-brass/90">

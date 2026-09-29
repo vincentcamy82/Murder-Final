@@ -27,6 +27,10 @@ export const DEFAULT_SITE: SiteContent = {
   background_url:
     "https://images.unsplash.com/photo-1481018085669-2bc6e4f00eed?auto=format&fit=crop&w=1920&q=80",
   has_background_upload: false,
+  biography_background_source: "url",
+  biography_background_url: "",
+  has_biography_background_upload: false,
+  teasers: [],
   updated_at: "",
 };
 
@@ -35,4 +39,11 @@ export function backgroundUrl(site: SiteContent, apiBase: string): string {
     return `${apiBase}/site/background?v=${encodeURIComponent(site.updated_at || "")}`;
   }
   return site.background_url || DEFAULT_SITE.background_url;
+}
+
+export function biographyBackgroundUrl(site: SiteContent, apiBase: string): string {
+  if (site.biography_background_source === "upload" && site.has_biography_background_upload) {
+    return `${apiBase}/site/background?target=biography&v=${encodeURIComponent(site.updated_at)}`;
+  }
+  return site.biography_background_url;
 }

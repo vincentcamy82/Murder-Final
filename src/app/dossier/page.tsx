@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
-import { api, fileUrl, clearToken } from "@/lib/api";
-import { youtubeEmbed, vimeoEmbed } from "@/lib/media";
+import { api, API, fileUrl, clearToken } from "@/lib/api";
+import VideoGallery, { VideoPlayer } from "@/components/VideoGallery";
+import BiographyBackground from "@/components/BiographyBackground";
+import { DEFAULT_SITE } from "@/lib/site";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import type { Character, MediaItem } from "@/types";
+import type { Character, MediaItem, SiteContent } from "@/types";
 import { FileText, Image as ImageIcon, Film, LogOut, ScrollText, type LucideProps } from "lucide-react";
-
-const INTRO_AUDIO = "";
 
 export default function Dossier() {
   const router = useRouter();
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<string | null>(null);
-  const audioRef = useRef<HTMLVideoElement | null>(null);
+  const [site, setSite] = useState<SiteContent>(DEFAULT_SITE);
 
   useEffect(() => {
     api
@@ -30,24 +30,8 @@ export default function Dossier() {
   }, [router]);
 
   useEffect(() => {
-    if (loading || !character) return;
-    const el = audioRef.current;
-    if (!el) return;
-    el.volume = 0.6;
-    const tryPlay = () => el.play().catch(() => {});
-    tryPlay();
-    const onInteract = () => {
-      tryPlay();
-      window.removeEventListener("pointerdown", onInteract);
-      window.removeEventListener("keydown", onInteract);
-    };
-    window.addEventListener("pointerdown", onInteract);
-    window.addEventListener("keydown", onInteract);
-    return () => {
-      window.removeEventListener("pointerdown", onInteract);
-      window.removeEventListener("keydown", onInteract);
-    };
-  }, [loading, character]);
+    api.get<SiteContent>("/site").then(({ data }) => setSite({ ...DEFAULT_SITE, ...data })).catch(() => {});
+  }, []);
 
   const logout = () => {
     clearToken();
@@ -69,18 +53,7 @@ export default function Dossier() {
 
   return (
     <div className="relative min-h-screen bg-noir-950 grain">
-      {INTRO_AUDIO ? (
-        <video
-          ref={audioRef}
-          src={INTRO_AUDIO}
-          playsInline
-          aria-hidden="true"
-          tabIndex={-1}
-          data-testid="intro-audio"
-          className="pointer-events-none absolute h-px w-px opacity-0"
-          style={{ left: "-9999px" }}
-        />
-      ) : null}
+      <BiographyBackground site={site} apiBase={API} />
       <header className="sticky top-0 z-20 border-b border-white/10 bg-black/60 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <span className="font-mono text-xs uppercase tracking-[0.3em] text-brass">
@@ -148,7 +121,7 @@ export default function Dossier() {
             <Tabs defaultValue="story" className="w-full">
               <TabsList className="h-auto w-full justify-start gap-2 rounded-none border-b border-white/10 bg-transparent p-0">
                 <TabTrigger value="story" icon={FileText} label="Récit" testid="tab-story" />
-                <TabTrigger value="video" icon={Film} label={`Vidéo (${videos.length})`} testid="tab-video" />
+                <TabTrigger value="video" icon={Film} label={`Vidéos (${videos.length + site.teasers.length})`} testid="tab-video" />
               </TabsList>
 
               <TabsContent value="story" className="animate-fade-in mt-8">
@@ -164,12 +137,11 @@ export default function Dossier() {
               </TabsContent>
 
               <TabsContent value="video" className="animate-fade-in mt-8">
-                {videos.length === 0 ? (
-                  <Empty text="Aucune séquence archivée." />
-                ) : (
-                  <div className="space-y-8">
+                <VideoGallery videos={site.teasers} />
+                {videos.length > 0 && (
+                  <div className="mt-8 space-y-8">
                     {videos.map((m) => (
-                      <VideoBlock key={m.id} src={srcFor(m)} isUpload={m.source === "upload"} />
+                      <VideoPlayer key={m.id} url={srcFor(m)} title={m.filename || "Vidéo privée"} />
                     ))}
                   </div>
                 )}
@@ -218,29 +190,6 @@ function Empty({ text }: { text: string }) {
   return (
     <div className="rounded-md border border-dashed border-white/10 bg-noir-paper/50 p-12 text-center">
       <p className="font-serif italic text-parch/40">{text}</p>
-    </div>
-  );
-}
-
-function VideoBlock({ src, isUpload }: { src: string; isUpload: boolean }) {
-  const yt = !isUpload ? youtubeEmbed(src) : null;
-  const vm = !isUpload ? vimeoEmbed(src) : null;
-  const embed = yt || vm;
-  return (
-    <div className="overflow-hidden rounded-md border border-white/10 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-      <div className="aspect-video w-full">
-        {embed ? (
-          <iframe
-            src={embed}
-            title="video"
-            className="h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        ) : (
-          <video src={src} controls className="h-full w-full bg-black" />
-        )}
-      </div>
     </div>
   );
 }
