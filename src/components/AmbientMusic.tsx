@@ -15,7 +15,6 @@ export default function AmbientMusic({ track }: { track: string }) {
     if (!player) return;
     const controller = new AbortController();
     autoplay.current = controller;
-    player.volume = 0.35;
 
     const tryPlay = async () => {
       try {
