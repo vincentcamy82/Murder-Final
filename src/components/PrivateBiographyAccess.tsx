@@ -33,7 +33,7 @@ export default function PrivateBiographyAccess({ codeLabel }: { codeLabel: strin
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="mt-6 h-auto w-full gap-2 whitespace-normal py-3" data-testid="private-biography-button"><KeyRound className="h-4 w-4 shrink-0" /> Accéder à ma bio privée</Button>
+      <Button disabled onClick={() => setOpen(true)} className="mt-6 h-auto w-full gap-2 whitespace-normal py-3 disabled:bg-parch/10 disabled:text-parch/40" data-testid="private-biography-button"><KeyRound className="h-4 w-4 shrink-0" /> Accéder à ma bio privée</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="border-brass/30 bg-noir-paper text-parch" aria-describedby="private-access-description">
           <DialogHeader><DialogTitle className="font-serif text-2xl">Votre dossier privé</DialogTitle></DialogHeader>
