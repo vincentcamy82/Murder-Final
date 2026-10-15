@@ -1,4 +1,4 @@
-import type { SiteContent } from "@/types";
+import type { SiteContent, TeaserVideo } from "@/types";
 
 export const HEADING_FONTS = [
   "Cormorant Garamond",
@@ -33,6 +33,13 @@ export const DEFAULT_SITE: SiteContent = {
   teasers: [],
   updated_at: "",
 };
+
+export function latestTeaser(teasers: TeaserVideo[]): TeaserVideo | null {
+  return teasers.reduce<TeaserVideo | null>(
+    (latest, teaser) => (!latest || (teaser.added_at ?? "") >= (latest.added_at ?? "") ? teaser : latest),
+    null,
+  );
+}
 
 export function backgroundUrl(site: SiteContent, apiBase: string): string {
   if (site.background_source === "upload" && site.has_background_upload) {

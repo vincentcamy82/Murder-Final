@@ -48,6 +48,7 @@ export interface TeaserVideo {
   id: string;
   title: string;
   url: string;
+  added_at?: string;
 }
 
 export interface SiteContent {

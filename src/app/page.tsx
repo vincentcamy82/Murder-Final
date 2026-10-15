@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, API, fileUrl } from "@/lib/api";
-import { DEFAULT_SITE, backgroundUrl } from "@/lib/site";
+import { DEFAULT_SITE, backgroundUrl, latestTeaser } from "@/lib/site";
 import type { PublicCharacter, SiteContent } from "@/types";
 import { MapPin, Hourglass, Lock } from "lucide-react";
 import VideoGallery from "@/components/VideoGallery";
@@ -113,6 +113,8 @@ export default function Landing() {
 
   const bodyFont = `'${site.font_body}', serif`;
   const bg = backgroundUrl(site, API);
+  const newestTeaser = latestTeaser(site.teasers);
+  const homeTeasers = newestTeaser ? [newestTeaser] : [];
   const eventDateObj = new Date(site.event_date);
 
   return (
@@ -166,8 +168,8 @@ export default function Landing() {
         <Countdown label={site.countdown_label} eventDate={site.event_date} />
 
         <div className="relative mx-auto mt-12 max-w-3xl text-left" data-testid="home-teasers">
-          <h2 className="mb-6 text-center font-serif text-3xl text-[#c8a24e]">Les teasers de la soirée</h2>
-          <VideoGallery videos={site.teasers} />
+          <h2 className="mb-6 text-center font-serif text-3xl text-[#c8a24e]">Le dernier teaser</h2>
+          <VideoGallery videos={homeTeasers} />
           <Link href="/videos" className="mt-6 block text-center text-brass underline underline-offset-4">Toutes les vidéos</Link>
         </div>
       </section>

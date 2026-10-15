@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Temporal } from "temporal-polyfill";
 import { requireAdmin } from "@/lib/server/auth";
 import { getSiteRecord, serializeSite, updateSiteRecord } from "@/lib/server/data";
 import { ApiError, handler } from "@/lib/server/http";
@@ -29,7 +30,10 @@ export const PUT = handler(async (request) => {
   for (const field of EDITABLE_FIELDS) {
     if (body[field] !== null && body[field] !== undefined) updates[field] = body[field];
   }
+  const previous = await getSiteRecord();
   if (body.teasers !== undefined) {
+    const addedAtById = new Map((previous.teasers ?? []).map((teaser) => [teaser.id, teaser.added_at]));
+    const savedAt = Temporal.Now.instant().toString();
     if (!Array.isArray(body.teasers) || body.teasers.length > 30) {
       throw new ApiError(400, "Ajoutez au maximum 30 teasers");
     }
@@ -44,10 +48,9 @@ export const PUT = handler(async (request) => {
       try { parsed = new URL(url); } catch { throw new ApiError(400, "Lien vidéo invalide"); }
       if (parsed.protocol !== "https:" || parsed.username || parsed.password) throw new ApiError(400, "Utilisez un lien vidéo HTTPS");
       ids.add(id);
-      return { id, title: title.trim(), url: parsed.href };
+      return { id, title: title.trim(), url: parsed.href, added_at: addedAtById.get(id) ?? savedAt };
     });
   }
-  const previous = await getSiteRecord();
   const obsoletePaths: string[] = [];
   for (const prefix of ["background", "biography_background"] as const) {
     const source = updates[`${prefix}_source`];
